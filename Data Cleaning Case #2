@@ -118,7 +118,7 @@ VALUES
 --TABLE:customer_orders
 CREATE TEMP TABLE customer_orders_temp AS
 SELECT
-	order_id,
+    order_id,
     customer_id,
     pizza_id,
     CASE WHEN exclusions IS NULL OR exclusions LIKE 'null' THEN ''
@@ -132,7 +132,7 @@ FROM pizza_runner.customer_orders;
 --TABLE:runner_orders
 CREATE TEMP TABLE runner_orders_temp AS
 SELECT
-	order_id,
+    order_id,
     runner_id,
     CASE WHEN pickup_time IS NULL OR pickup_time LIKE 'null' THEN ''
     	 ELSE pickup_time END AS pickup_time,
