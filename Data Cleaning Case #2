@@ -115,7 +115,7 @@ VALUES
 -----DATA CLEANING--------------------------------------
 --------------------------------------------------------
 
---TABLE:customer_orders
+----TABEL: customer.order----
 CREATE TEMP TABLE customer_orders_temp AS
 SELECT
     order_id,
@@ -128,18 +128,17 @@ SELECT
     order_time
 FROM pizza_runner.customer_orders;
 
-
---TABLE:runner_orders
+----TABEL: runners.order----
 CREATE TEMP TABLE runner_orders_temp AS
 SELECT
     order_id,
     runner_id,
-    CASE WHEN pickup_time IS NULL OR pickup_time LIKE 'null' THEN ''
+    CASE WHEN pickup_time LIKE 'null' THEN NULL
     	 ELSE pickup_time END AS pickup_time,
-    CASE WHEN distance IS NULL OR distance LIKE 'null' THEN ''
+    CASE WHEN distance IS NULL OR distance LIKE 'null' THEN '0'
     	 WHEN distance LIKE'%km' THEN TRIM('km' FROM distance)
     	 ELSE distance END AS distance,
-    CASE WHEN duration IS NULL OR duration LIKE 'null' THEN ''
+    CASE WHEN duration IS NULL OR duration LIKE 'null' THEN '0'
     	 WHEN duration LIKE '%mins' THEN TRIM ('mins' FROM duration)
          WHEN duration LIKE '%minute' THEN TRIM ('minute' FROM duration)
          WHEN duration LIKE '%minutes' THEN TRIM ('minutes' FROM duration)
@@ -147,3 +146,7 @@ SELECT
     CASE WHEN cancellation IS NULL OR cancellation LIKE 'null' THEN ''
     	 ELSE cancellation END AS cancellation
 FROM pizza_runner.runner_orders;
+ALTER TABLE runner_orders_temp
+ALTER COLUMN pickup_time TYPE DATE USING ("pickup_time"::DATE),
+ALTER COLUMN distance TYPE FLOAT USING (distance::FLOAT),
+ALTER COLUMN duration TYPE INT USING (duration::INT);
