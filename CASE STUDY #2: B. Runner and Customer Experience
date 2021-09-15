@@ -1,0 +1,85 @@
+---------------------------------------
+---B. Runner and Customer Experience---
+
+-- 1.How many runners signed up for each 1 week period? (i.e. week starts 2021-01-01)
+SELECT
+	DATE_PART('week',registration_date) AS week,
+  COUNT(runner_id) AS runners_signed_up
+FROM pizza_runner.runners
+GROUP BY week;
+
+-- 2.What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to pickup the order?
+SELECT AVG(time_to_pickup) AS avg_time_to_pickup
+FROM
+	(SELECT
+     	c.order_id,
+     	ABS(DATE_PART('minute',c.order_time-r.pickup_time)) AS time_to_pickup
+     FROM customer_orders_temp AS c
+     JOIN runner_orders_temp AS r
+     	ON c.order_id=r.order_id
+     WHERE r.distance!=0) AS pickup_table;
+
+-- 3.Is there any relationship between the number of pizzas and how long the order takes to prepare?
+SELECT
+	number_pizzas,
+	AVG(prepare_time) AS time_to_prepare
+FROM
+	(SELECT
+     	c.order_id,
+     	COUNT(c.order_id) AS number_pizzas,
+     	ABS(DATE_PART('minute',r.pickup_time-c.order_time)) AS prepare_time
+   FROM customer_orders_temp AS c
+   JOIN runner_orders_temp AS r
+     	ON c.order_id=r.order_id
+   WHERE r.pickup_time IS NOT NULL
+   GROUP BY c.order_id, c.order_time, r.pickup_time ) AS prepare_time_table
+GROUP BY number_pizzas
+ORDER BY number_pizzas;
+
+-- 4.What was the average distance travelled for each customer?
+SELECT
+	c.customer_id,
+  AVG(distance) AS avg_distance
+FROM customer_orders_temp AS c
+JOIN runner_orders_temp AS r
+	ON c.order_id=r.order_id
+WHERE distance!=0
+GROUP BY c.customer_id
+ORDER BY c.customer_id;
+            
+-- 5.What was the difference between the longest and shortest delivery times for all orders?
+SELECT
+	MAX(prepare_time)-MIN(prepare_time) AS delivery_times
+FROM
+	(SELECT
+     	c.order_id,
+     	ABS(DATE_PART('minute',r.pickup_time-c.order_time)) AS prepare_time
+   FROM customer_orders_temp AS c
+   JOIN runner_orders_temp AS r
+     	ON c.order_id=r.order_id
+   WHERE r.pickup_time IS NOT NULL
+   GROUP BY c.order_id, c.order_time, r.pickup_time ) AS prepare_time_table;
+
+-- 6.What was the average speed for each runner for each delivery and do you notice any trend for these values?
+SELECT
+	  r.runner_id,
+    c.customer_id,
+    r.order_id,
+    COUNT(pizza_id) AS pizza_count,
+    r.distance,
+    r.duration/60 AS duration_hour,
+    r.distance/r.duration*60 AS avg_speed
+FROM customer_orders_temp AS c
+JOIN runner_orders_temp AS r
+  ON c.order_id=r.order_id
+WHERE r.duration!=0 OR r.duration!=0
+GROUP BY r.runner_id,c.customer_id,r.order_id,r.distance,r.duration
+ORDER BY r.runner_id, avg_speed;
+
+-- 7.What is the successful delivery percentage for each runner?
+SELECT
+	runner_id,
+	ROUND(100*SUM(CASE WHEN distance=0 THEN 0 ELSE 1 END)/COUNT(order_id),2)AS perc_successful
+FROM runner_orders_temp
+GROUP BY runner_id
+ORDER BY runner_id;
